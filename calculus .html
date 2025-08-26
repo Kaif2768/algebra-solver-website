@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Step-by-Step Algebraic Solver</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+
+    <!-- jsPDF Library for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- math.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+
+    <!-- Original CSS STYLES -->
+    <style>
+        :root {
+            --primary-color: #3498db; --secondary-color: #2c3e50; --danger-color: #e74c3c;
+            --success-color: #2ecc71; --light-bg: #f0f4f8; --white-color: #ffffff;
+        }
+        body { font-family: Arial, sans-serif; background-color: var(--light-bg); color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; width: 100%; background-color: var(--white-color); padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); margin: 20px auto; }
+        
+        .top-bar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0;}
+        #user-info { font-weight: bold; margin-right: 15px; color: var(--secondary-color); }
+        .hidden { display: none; }
+
+        header { text-align: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px; margin-bottom: 30px; }
+        header h1 { color: var(--secondary-color); margin: 0; }
+        .section-title { font-family: 'Poppins', sans-serif; font-size: 2.2rem; font-weight: 600; text-align: center; color: var(--secondary-color); margin-bottom: 40px; padding-bottom: 15px; position: relative; letter-spacing: 1.5px; text-transform: uppercase; }
+        .section-title::after { content: ''; position: absolute; display: block; width: 120px; height: 5px; background: linear-gradient(90deg, var(--primary-color), #9b59b6); left: 50%; transform: translateX(-50%); bottom: 0; border-radius: 5px; }
+        
+        .ad-placeholder {
+            width: 100%; min-height: 90px; background-color: #f0f0f0; border: 2px dashed #ccc;
+            display: flex; justify-content: center; align-items: center; text-align: center;
+            color: #888; font-size: 16px; margin: 30px 0;
+        }
+
+        .blog-section {
+             margin-top: 40px; border-top: 2px solid #e0e0e0; padding-top: 20px;
+        }
+        .blog-post {
+            background-color: #f9f9f9; border-left: 4px solid var(--primary-color);
+            padding: 15px 20px; margin-bottom: 25px; border-radius: 5px;
+        }
+        .blog-post h3 { margin-top: 0; color: var(--secondary-color); }
+        .blog-post p { line-height: 1.6; color: #555; }
+
+        .form-group, .button-group { margin-bottom: 20px; }
+        .input-group-container { display: flex; gap: 15px; justify-content: center; }
+        .input-group-container .form-group { flex: 1; }
+        .form-inputs { display: none; }
+        .form-inputs.active { display: flex; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        textarea { resize: vertical; min-height: 80px; }
+        button { padding: 12px 20px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px; }
+        .primary-btn { background-color: var(--primary-color); color: var(--white-color); }
+        .danger-btn { background-color: var(--danger-color); color: var(--white-color); }
+        .solution-container { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 5px; padding: 20px; margin-top: 20px; display: none; }
+        .solution-container h3 { margin-top: 0; color: #2980b9; }
+        .solution-container .step { padding: 10px; margin-bottom: 12px; border-left: 3px solid var(--primary-color); background-color: #ecf0f1; border-radius: 3px; word-wrap: break-word; line-height: 1.6; }
+        .solution-container .step-description { font-style: italic; color: #555; margin-bottom: 5px; display: block; font-weight: bold; }
+        .solution-container .final-answer { font-weight: bold; font-size: 1.2em; padding: 15px; background-color: var(--success-color); color: var(--white-color); text-align: center; border-radius: 5px; margin-top: 15px; word-wrap: break-word; }
+        button.save-history-btn { background-color: #f39c12; color: white; margin-top: 15px; }
+        button.save-history-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        .history-toggle-btn { position: fixed; top: 20px; right: 20px; width: 60px; height: 60px; background-color: var(--secondary-color); color: var(--white-color); border-radius: 50%; border: none; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; z-index: 1001; }
+        .history-panel { position: fixed; top: 0; right: -400px; width: 400px; height: 100%; background-color: var(--white-color); box-shadow: -4px 0 15px rgba(0,0,0,0.2); z-index: 1000; transition: right 0.4s ease-in-out; display: flex; flex-direction: column; }
+        .history-panel.active { right: 0; }
+        .history-header { padding: 20px; background-color: var(--secondary-color); color: var(--white-color); text-align: center; }
+        #history-list { flex-grow: 1; overflow-y: auto; padding: 15px; }
+        .history-item { background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 10px; word-wrap: break-word; }
+        .history-item .formula-title { font-weight: bold; color: var(--primary-color); }
+        .history-footer { padding: 15px; border-top: 1px solid #ddd; display: flex; justify-content: space-around; }
+    </style>
+</head>
+<body>
+
+    <button id="history-toggle-btn" class="history-toggle-btn">H</button>
+    <div id="history-panel" class="history-panel">
+        <div class="history-header"><h3>Calculation History</h3></div>
+        <div id="history-list"><p>Please log in to see your cloud history.</p></div>
+        <div class="history-footer">
+            <button id="export-pdf-btn" class="primary-btn">Export as PDF</button>
+            <button id="clear-history-btn" class="danger-btn">Clear History</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Login/Logout Controls -->
+        <div class="top-bar">
+            <span id="user-info" class="hidden"></span>
+            <button id="login-btn" class="primary-btn">Login with Google</button>
+            <button id="logout-btn" class="danger-btn hidden">Logout</button>
+        </div>
+
+        <header>
+            <h1>Advanced Step-by-Step Algebraic Solver</h1>
+            <p>Enter a linear equation to solve, or use the specialized calculators below.</p>
+        </header>
+
+        <!-- Ad Unit 1 Placeholder - UPDATED WITH YOUR AD CODE -->
+        <div class="ad-placeholder">
+            <script async="async" data-cfasync="false" src="//pl27510939.profitableratecpm.com/918b0eb10913fd93680fcaeaf4132006/invoke.js"></script>
+            <div id="container-918b0eb10913fd93680fcaeaf4132006"></div>
+        </div>
+
+        <!-- Universal Problem Solver Section -->
+        <section class="universal-solver">
+            <h2 class="section-title">Linear Equation Solver</h2>
+            <div class="form-group">
+                <label for="problem-input">Enter a linear equation to solve:</label>
+                <textarea id="problem-input" placeholder="e.g., solve 3(x + 2) = 5(x - 4)&#10;e.g., 10x - 5 = 2x + 11"></textarea>
+            </div>
+            <div class="button-group">
+                <button id="solve-problem-btn" class="primary-btn">Solve Equation</button>
+                <button id="clear-problem-btn" class="danger-btn">Clear</button>
+            </div>
+            <div id="problem-solution" class="solution-container"></div>
+        </section>
+        
+        <!-- Quadratic Equation Section (RESTORED) -->
+        <section class="quadratic-solver" style="margin-top: 40px; border-top: 2px solid #e0e0e0; padding-top: 20px;">
+            <h2 class="section-title">Quadratic Root Solver</h2>
+             <div class="form-group">
+                <label for="quadratic-form-select">Choose Equation Form:</label>
+                <select id="quadratic-form-select">
+                    <option value="standard">Standard Form: ax² + bx + c = 0</option>
+                    <option value="vertex">Vertex Form: a(x - h)² + k = 0</option>
+                    <option value="intercept">Intercept Form: a(x - p)(x - q) = 0</option>
+                </select>
+            </div>
+            <div id="standard-form-inputs" class="form-inputs active input-group-container">
+                <div class="form-group"><label>a:</label><input type="number" id="std-a" placeholder="1"></div>
+                <div class="form-group"><label>b:</label><input type="number" id="std-b" placeholder="2"></div>
+                <div class="form-group"><label>c:</label><input type="number" id="std-c" placeholder="5"></div>
+            </div>
+            <div id="vertex-form-inputs" class="form-inputs input-group-container">
+                <div class="form-group"><label>a:</label><input type="number" id="vtx-a" placeholder="2"></div>
+                <div class="form-group"><label>h:</label><input type="number" id="vtx-h" placeholder="1"></div>
+                <div class="form-group"><label>k:</label><input type="number" id="vtx-k" placeholder="-8"></div>
+            </div>
+            <div id="intercept-form-inputs" class="form-inputs input-group-container">
+                <div class="form-group"><label>a:</label><input type="number" id="int-a" placeholder="1"></div>
+                <div class="form-group"><label>p:</label><input type="number" id="int-p" placeholder="2"></div>
+                <div class="form-group"><label>q:</label><input type="number" id="int-q" placeholder="3"></div>
+            </div>
+            <div class="button-group">
+                <button id="solve-quadratic-btn" class="primary-btn">Solve for Roots</button>
+                <button id="clear-quadratic-btn" class="danger-btn">Clear</button>
+            </div>
+            <div id="quadratic-solution" class="solution-container"></div>
+        </section>
+
+        <!-- Formula Calculator Section (RESTORED) -->
+        <section class="calculator" style="margin-top: 40px; border-top: 2px solid #e0e0e0; padding-top: 20px;">
+            <h2 class="section-title">Formula Calculator</h2>
+            <div class="form-group">
+                <label for="formula-select">Choose a formula:</label>
+                <select id="formula-select">
+                    <option value="x_plus_y_sq" data-name="(x + y)²">(x + y)² = x² + 2xy + y²</option>
+                    <option value="x_minus_y_sq" data-name="(x - y)²">(x - y)² = x² - 2xy + y²</option>
+                    <option value="x_plus_y_cubed" data-name="(x + y)³">(x + y)³ = x³ + 3x²y + 3xy² + y³</option>
+                    <option value="x_minus_y_cubed" data-name="(x - y)³">(x - y)³ = x³ - 3x²y + 3xy² - y³</option>
+                    <option value="sum_of_sq" data-name="x² + y²">x² + y² (Sum of Squares)</option>
+                    <option value="diff_of_sq" data-name="x² - y²">x² - y² = (x + y)(x - y)</option>
+                    <option value="sum_of_cubes" data-name="x³ + y³">x³ + y³ = (x + y)(x² - xy + y²)</option>
+                    <option value="diff_of_cubes" data-name="x³ - y³">x³ - y³ = (x - y)(x² + xy + y²)</option>
+                </select>
+            </div>
+            <div id="input-fields" class="input-group-container"></div>
+            <div class="button-group">
+                <button id="calculate-btn" class="primary-btn">Calculate</button>
+                <button id="clear-btn" class="danger-btn">Clear</button>
+            </div>
+            <div id="solution" class="solution-container"></div>
+        </section>
+
+        <!-- Ad Unit 2 Placeholder - UPDATED WITH YOUR AD CODE -->
+        <div class="ad-placeholder">
+             <script async="async" data-cfasync="false" src="//pl27510939.profitableratecpm.com/918b0eb10913fd93680fcaeaf4132006/invoke.js"></script>
+             <div id="container-918b0eb10913fd93680fcaeaf4132006"></div>
+        </div>
+
+        <!-- BLOG SECTION FOR ADSENSE APPROVAL -->
+        <section class="blog-section">
+            <h2 class="section-title">Learn About Algebra</h2>
+            <div class="blog-post">
+                <h3>Algebra Kya Hai? (What is Algebra?)</h3>
+                <p>Algebra mathematics ki woh branch hai jisme hum numbers ke saath-saath letters (jaise x, y) aur symbols ka istemal karte hain. Yeh letters "unknown" values ko represent karte hain. Algebra ka maqsad in unknown values ko dhoondhna hota hai. Yeh ek puzzle ki tarah hai, jahan aapko equations ko balance karke missing piece (variable ki value) ko find karna hota hai.</p>
+            </div>
+            <div class="blog-post">
+                <h3>Algebra Kyon Zaroori Hai? (Why is it Important?)</h3>
+                <p>Algebra sirf school ke liye nahi hai, yeh hamari daily life mein bhi bahut kaam aata hai. Budgeting karne se lekar, cooking mein recipe ko adjust karne tak, har jagah iska use hota hai. For example, agar aapko pata karna hai ki ek certain budget mein aap kitna samaan khareed sakte hain, toh aap algebra ka istemal kar rahe hain. Iske alawa, engineering, computer programming, aur science mein toh algebra ek fundamental tool hai.</p>
+            </div>
+            <div class="blog-post">
+                <h3>Variables aur Equations ko Samjhein</h3>
+                <p>Algebra mein **variable** ek symbol hota hai (jaise 'x') jo kisi bhi value ko le sakta hai. Iske opposite, **constant** ek fixed number hota hai (jaise 5, 10). Jab hum in variables, constants, aur mathematical operators (+, -, *, /) ko milate hain, toh ek **equation** banti hai. Ek equation hamesha equal sign (=) ke saath aati hai, jo batati hai ki left side ki value right side ke barabar hai. Hamara goal variable ki woh value nikalna hota hai jiske liye yeh equation sach ho.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ===================================================================================
+            // ### YOUR FIREBASE CONFIGURATION IS HERE ###
+            // This is INSECURE and only for personal testing.
+            // ===================================================================================
+            const firebaseConfig = {
+              apiKey: "AIzaSyBTxjN6PLEm2r1tgquEutC_3Bl1H7RI_l4",
+              authDomain: "algebric-calclulator.firebaseapp.com",
+              projectId: "algebric-calclulator",
+              storageBucket: "algebric-calclulator.appspot.com",
+              messagingSenderId: "492401332892",
+              appId: "1:492401332892:web:adb10dbbeb3f66d3d11359",
+              measurementId: "G-MJL6C4B77M"
+            };
+
+            // --- GLOBAL CONFIG & STATE ---
+            let firebaseApp, firebaseAuth, firebaseDb, currentUser = null, historyLog = [];
+
+            // --- DOM ELEMENTS ---
+            const allElements = {
+                loginBtn: document.getElementById('login-btn'), logoutBtn: document.getElementById('logout-btn'),
+                userInfo: document.getElementById('user-info'),
+                solveProblemBtn: document.getElementById('solve-problem-btn'), clearProblemBtn: document.getElementById('clear-problem-btn'),
+                problemInput: document.getElementById('problem-input'), problemSolutionContainer: document.getElementById('problem-solution'),
+                quadraticFormSelect: document.getElementById('quadratic-form-select'), standardFormInputs: document.getElementById('standard-form-inputs'),
+                vertexFormInputs: document.getElementById('vertex-form-inputs'), interceptFormInputs: document.getElementById('intercept-form-inputs'),
+                solveQuadraticBtn: document.getElementById('solve-quadratic-btn'), clearQuadraticBtn: document.getElementById('clear-quadratic-btn'),
+                quadraticSolutionContainer: document.getElementById('quadratic-solution'), formulaSelect: document.getElementById('formula-select'),
+                inputFieldsContainer: document.getElementById('input-fields'), calculateBtn: document.getElementById('calculate-btn'),
+                clearBtn: document.getElementById('clear-btn'), solutionContainer: document.getElementById('solution'),
+                historyToggleBtn: document.getElementById('history-toggle-btn'), historyPanel: document.getElementById('history-panel'),
+                historyList: document.getElementById('history-list'), exportPdfBtn: document.getElementById('export-pdf-btn'),
+                clearHistoryBtn: document.getElementById('clear-history-btn'),
+            };
+
+            // --- INITIALIZATION ---
+            function initializeApp() {
+                if (!firebaseConfig.apiKey) {
+                    alert("CRITICAL ERROR: Firebase configuration is missing.");
+                    return;
+                }
+                try {
+                    firebaseApp = firebase.initializeApp(firebaseConfig);
+                    firebaseAuth = firebase.auth();
+                    firebaseDb = firebase.firestore();
+                    setupEventListeners();
+                    monitorAuthState();
+                    updateInputFields(); // This was missing in some previous logic, re-added to ensure it runs
+                } catch (error) {
+                    console.error("Firebase Initialization Failed:", error);
+                    alert("Could not initialize Firebase. Please check that your configuration details are correct and that you have enabled Google Sign-In in the Firebase console.");
+                }
+            }
+
+            // --- AUTHENTICATION & UI UPDATES ---
+            function monitorAuthState() {
+                firebaseAuth.onAuthStateChanged(user => {
+                    if (user) {
+                        currentUser = { uid: user.uid, displayName: user.displayName, email: user.email };
+                        updateUIForLoggedIn();
+                        fetchHistory();
+                    } else {
+                        currentUser = null;
+                        updateUIForLoggedOut();
+                        clearHistoryList();
+                    }
+                });
+            }
+            function loginWithGoogle() {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                firebaseAuth.signInWithPopup(provider).catch(error => {
+                    console.error("Login Failed:", error);
+                    alert("Login failed. Please check the console for errors. Ensure you have enabled Google Sign-in in your Firebase project and are running this on a local server.");
+                });
+            }
+            function logout() { firebaseAuth.signOut().catch(error => console.error("Logout Failed:", error)); }
+            function updateUIForLoggedIn() {
+                allElements.userInfo.textContent = `Welcome, ${currentUser.displayName.split(' ')[0]}!`;
+                allElements.userInfo.classList.remove('hidden');
+                allElements.loginBtn.classList.add('hidden');
+                allElements.logoutBtn.classList.remove('hidden');
+            }
+            function updateUIForLoggedOut() {
+                allElements.userInfo.classList.add('hidden');
+                allElements.loginBtn.classList.remove('hidden');
+                allElements.logoutBtn.classList.add('hidden');
+            }
+
+            // --- HISTORY MANAGEMENT (FIREBASE) ---
+            function updateHistoryList() {
+                if (!currentUser) { allElements.historyList.innerHTML = `<p>Please log in to see your cloud history.</p>`; return; }
+                if (historyLog.length === 0) { allElements.historyList.innerHTML = '<p>No calculations saved yet.</p>'; return; }
+                allElements.historyList.innerHTML = historyLog.map(item => {
+                    const date = item.timestamp?.seconds ? new Date(item.timestamp.seconds * 1000).toLocaleString() : 'Just now';
+                    return `
+                    <div class="history-item">
+                        <p class="formula-title">${item.formulaName}</p>
+                        <p><small>${date}</small></p>
+                        <p><strong>Input:</strong> ${JSON.stringify(item.inputs)}</p>
+                        <p><strong>Result:</strong> ${item.steps[0]}</p>
+                    </div>`;
+                }).join('');
+            }
+            async function fetchHistory() {
+                if (!currentUser) return;
+                try {
+                    const snapshot = await firebaseDb.collection('users').doc(currentUser.uid).collection('history').orderBy('timestamp', 'desc').limit(50).get();
+                    historyLog = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    updateHistoryList();
+                } catch (error) { console.error("Error fetching history:", error); }
+            }
+            async function saveCalculationToHistory(calculation) {
+                if (!currentUser) { alert("Please log in to save your calculation history."); return; }
+                try {
+                    const dataToSave = { ...calculation, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+                    await firebaseDb.collection('users').doc(currentUser.uid).collection('history').add(dataToSave);
+                    fetchHistory();
+                } catch (error) { console.error("Error saving to Firestore:", error); }
+            }
+            async function clearCloudHistory() {
+                if (!currentUser) return;
+                if (confirm('Are you sure you want to clear your entire cloud history? This cannot be undone.')) {
+                    try {
+                        const snapshot = await firebaseDb.collection('users').doc(currentUser.uid).collection('history').get();
+                        const batch = firebaseDb.batch();
+                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                        await batch.commit();
+                        fetchHistory();
+                    } catch (error) { console.error("Error clearing history:", error); }
+                }
+            }
+            function clearHistoryList() { historyLog = []; updateHistoryList(); }
+
+            // --- MODIFIED `addSaveButton` ---
+            function addSaveButton(container, calculation) {
+                const existingBtn = container.querySelector('.save-history-btn');
+                if (existingBtn) existingBtn.remove();
+                const saveBtn = document.createElement('button');
+                saveBtn.textContent = 'Save to Cloud History'; saveBtn.className = 'save-history-btn primary-btn';
+                if (!currentUser) { saveBtn.disabled = true; saveBtn.textContent = 'Login to Save'; }
+                saveBtn.onclick = () => { saveCalculationToHistory(calculation); saveBtn.textContent = 'Saved!'; saveBtn.disabled = true; };
+                container.appendChild(saveBtn);
+            }
+
+            // --- EVENT LISTENERS ---
+            function setupEventListeners() {
+                allElements.loginBtn.addEventListener('click', loginWithGoogle);
+                allElements.logoutBtn.addEventListener('click', logout);
+                allElements.solveProblemBtn.addEventListener('click', universalSolver);
+                allElements.clearProblemBtn.addEventListener('click', clearLinearSolver);
+                allElements.quadraticFormSelect.addEventListener('change', switchQuadraticForm);
+                allElements.solveQuadraticBtn.addEventListener('click', solveQuadraticEquation);
+                allElements.clearQuadraticBtn.addEventListener('click', clearQuadraticSolver);
+                allElements.calculateBtn.addEventListener('click', calculateFormula);
+                allElements.clearBtn.addEventListener('click', () => { updateInputFields(); allElements.solutionContainer.style.display = 'none'; });
+                allElements.formulaSelect.addEventListener('change', updateInputFields);
+                allElements.historyToggleBtn.addEventListener('click', () => allElements.historyPanel.classList.toggle('active'));
+                allElements.clearHistoryBtn.addEventListener('click', clearCloudHistory);
+                allElements.exportPdfBtn.addEventListener('click', exportHistoryAsPDF);
+            }
+            
+            // --- FULLY RESTORED SOLVER AND HELPER FUNCTIONS ---
+            const formatSign = num => num < 0 ? `- ${math.abs(num)}` : `+ ${num}`;
+            const formatNum = num => parseFloat(num.toFixed(4));
+            const createStep = (desc, val) => `<div class="step"><span class="step-description">${desc}</span>${val}</div>`;
+            function clearLinearSolver() { allElements.problemInput.value = ''; allElements.problemSolutionContainer.style.display = 'none'; allElements.problemSolutionContainer.innerHTML = ''; }
+            function clearQuadraticSolver() {
+                const quadInputs = [...allElements.standardFormInputs.querySelectorAll('input'), ...allElements.vertexFormInputs.querySelectorAll('input'), ...allElements.interceptFormInputs.querySelectorAll('input')];
+                quadInputs.forEach(input => input.value = '');
+                allElements.quadraticSolutionContainer.style.display = 'none'; allElements.quadraticSolutionContainer.innerHTML = '';
+            }
+            function universalSolver() {
+                const input = allElements.problemInput.value.trim(); let html = ''; let calcData = null;
+                try {
+                    const solveRegex = /solve|=/i; if (!solveRegex.test(input)) throw new Error("Please enter a valid linear equation to solve.");
+                    const equationStr = input.replace(/solve/i, '').trim(); html = `<h3>Solving: ${equationStr}</h3>`;
+                    const sides = equationStr.split('='); if (sides.length !== 2) throw new Error("Invalid equation format.");
+                    let lhsNode = math.parse(sides[0]); let rhsNode = math.parse(sides[1]);
+                    const variable = (lhsNode.filter(n => n.isSymbolNode)[0] || rhsNode.filter(n => n.isSymbolNode)[0]);
+                    if (!variable) throw new Error("Could not find a variable."); const varName = variable.name;
+                    if (lhsNode.toString().includes(`${varName}^2`) || rhsNode.toString().includes(`${varName}^2`)) throw new Error("For quadratic equations (with x²), please use the dedicated Quadratic Root Solver below.");
+                    const distLHS = math.simplify(lhsNode); const distRHS = math.simplify(rhsNode);
+                    html += createStep("Step 1: Distribute terms on both sides.", `${distLHS.toString()} = ${distRHS.toString()}`);
+                    const getCoeffs = (node, v) => {
+                        const simplified = math.simplify(node); const constTerm = simplified.evaluate({[v]: 0});
+                        const varPart = math.simplify(`${simplified.toString()} - ${constTerm}`);
+                        const coeff = varPart.isConstantNode ? 0 : varPart.evaluate({[v]: 1});
+                        return { coeff: coeff, const: constTerm };
+                    };
+                    const lhsCoeffs = getCoeffs(distLHS, varName); const rhsCoeffs = getCoeffs(distRHS, varName);
+                    const movedVarsStr = `${lhsCoeffs.coeff}${varName} ${rhsCoeffs.coeff >= 0 ? '-' : '+'} ${math.abs(rhsCoeffs.coeff)}${varName}`;
+                    const movedConstsStr = `${rhsCoeffs.const} ${lhsCoeffs.const >= 0 ? '-' : '+'} ${math.abs(lhsCoeffs.const)}`;
+                    html += createStep("Step 2: Move variables to the left and constants to the right.", `${movedVarsStr} = ${movedConstsStr}`);
+                    const finalCoeff = lhsCoeffs.coeff - rhsCoeffs.coeff; const finalConst = rhsCoeffs.const - lhsCoeffs.const;
+                    html += createStep("Step 3: Combine like terms.", `${finalCoeff}${varName} = ${finalConst}`);
+                    const solution = finalConst / finalCoeff; html += createStep(`Step 4: Divide by ${finalCoeff} to solve for ${varName}.`, `${varName} = ${finalConst} / ${finalCoeff}`);
+                    const finalAnswerFraction = math.fraction(solution); const finalAnswerDecimal = formatNum(solution); const finalAnswerStr = `${varName} = ${finalAnswerFraction.toString()}`;
+                    html += `<div class="final-answer">${finalAnswerStr}<br>(Decimal: ${varName} ≈ ${finalAnswerDecimal})</div>`;
+                    calcData = { formulaName: 'Linear Equation Solver', inputs: { problem: input }, steps: [finalAnswerStr] };
+                    allElements.problemSolutionContainer.innerHTML = html; if (calcData) addSaveButton(allElements.problemSolutionContainer, calcData);
+                } catch (error) { allElements.problemSolutionContainer.innerHTML = `<h3>Error</h3><div class="step">${error.message}</div>`; }
+                allElements.problemSolutionContainer.style.display = 'block';
+            }
+            function switchQuadraticForm() {
+                const selected = allElements.quadraticFormSelect.value;
+                allElements.standardFormInputs.classList.toggle('active', selected === 'standard');
+                allElements.vertexFormInputs.classList.toggle('active', selected === 'vertex');
+                allElements.interceptFormInputs.classList.toggle('active', selected === 'intercept');
+            }
+            function solveQuadraticEquation() {
+                const form = allElements.quadraticFormSelect.value; let html = '', finalAnswer = '', inputs = {}, calcData;
+                try {
+                    if (form === 'standard') {
+                        const a = parseFloat(document.getElementById('std-a').value); const b = parseFloat(document.getElementById('std-b').value); const c = parseFloat(document.getElementById('std-c').value);
+                        if(isNaN(a) || isNaN(b) || isNaN(c) || a===0) throw new Error("Invalid inputs for standard form."); inputs = {a,b,c};
+                        html = `<h3>Solving: ${a}x² ${formatSign(b)}x ${formatSign(c)} = 0</h3>`; const discriminant = b*b - 4*a*c;
+                        html += createStep("1. Calculate Discriminant (Δ = b² - 4ac).", `Δ = ${formatNum(discriminant)}`);
+                        if(discriminant >= 0) {
+                            html += createStep("2. Use Quadratic Formula.", `x = (-b ± √Δ) / 2a`); const root1 = (-b + Math.sqrt(discriminant)) / (2*a); const root2 = (-b - Math.sqrt(discriminant)) / (2*a);
+                            finalAnswer = `x₁ = ${formatNum(root1)}, x₂ = ${formatNum(root2)}`;
+                        } else {
+                            html += createStep("2. Discriminant is negative; roots are complex.", `x = (-b ± i√-Δ) / 2a`); const realPart = -b / (2*a); const imaginaryPart = Math.sqrt(-discriminant) / (2*a);
+                            finalAnswer = `x₁ = ${formatNum(realPart)} + ${formatNum(imaginaryPart)}i, x₂ = ${formatNum(realPart)} - ${formatNum(imaginaryPart)}i`;
+                        }
+                    } else if (form === 'vertex') {
+                        const a = parseFloat(document.getElementById('vtx-a').value); const h = parseFloat(document.getElementById('vtx-h').value); const k = parseFloat(document.getElementById('vtx-k').value);
+                        if(isNaN(a) || isNaN(h) || isNaN(k) || a === 0) throw new Error("Invalid inputs for vertex form."); inputs = {a,h,k};
+                        html = `<h3>Solving: ${a}(x ${formatSign(-h)})² ${formatSign(k)} = 0</h3>`; html += createStep("1. Isolate the squared term.", `${a}(x ${formatSign(-h)})² = ${-k}`);
+                        html += createStep("2. Divide by 'a'.", `(x ${formatSign(-h)})² = ${-k/a}`); const val = -k/a;
+                        if(val >= 0) {
+                            html += createStep("3. Take the square root of both sides.", `x ${formatSign(-h)} = ±${formatNum(Math.sqrt(val))}`); const root1 = h + Math.sqrt(val); const root2 = h - Math.sqrt(val);
+                            finalAnswer = `x₁ = ${formatNum(root1)}, x₂ = ${formatNum(root2)}`;
+                        } else {
+                            html += createStep("3. Take the complex square root.", `x ${formatSign(-h)} = ±${formatNum(Math.sqrt(-val))}i`); const root1Str = `${h} + ${formatNum(Math.sqrt(-val))}i`; const root2Str = `${h} - ${formatNum(Math.sqrt(-val))}i`;
+                            finalAnswer = `x₁ = ${root1Str}, x₂ = ${root2Str}`;
+                        }
+                    } else if (form === 'intercept') {
+                        const a = parseFloat(document.getElementById('int-a').value); const p = parseFloat(document.getElementById('int-p').value); const q = parseFloat(document.getElementById('int-q').value);
+                        if(isNaN(a) || isNaN(p) || isNaN(q) || a === 0) throw new Error("Invalid inputs for intercept form. Note: 'a' cannot be zero."); inputs = {a,p,q};
+                        html += `<h3>Solving: ${a}(x ${formatSign(-p)})(x ${formatSign(-q)}) = 0</h3>`; html += createStep("1. Apply the Zero-Product Property.", `The equation shows a product of three factors: (${a}), (x ${formatSign(-p)}), and (x ${formatSign(-q)}). For the entire expression to equal zero, one of these factors must be zero.`);
+                        html += createStep("2. Analyze the factors.", `By definition of a quadratic equation, we know that 'a' (${a}) cannot be zero. Therefore, one of the other two factors must be equal to zero.`);
+                        html += createStep("3. Set the variable factors to zero.", `x ${formatSign(-p)} = 0  OR  x ${formatSign(-q)} = 0`);
+                        html += createStep("4. Solve for x in each case.", `x = ${p}  OR  x = ${q}`); finalAnswer = `x₁ = ${p}, x₂ = ${q}`;
+                    }
+                    html += `<div class="final-answer">${finalAnswer.replace(/, /g, '<br>')}</div>`;
+                    calcData = { formulaName: `Quadratic Solver (${form})`, inputs, steps: [finalAnswer] };
+                } catch (error) { html = `<h3>Error</h3><div class="step">${error.message}</div>`; }
+                allElements.quadraticSolutionContainer.innerHTML = html; if(calcData) addSaveButton(allElements.quadraticSolutionContainer, calcData);
+                allElements.quadraticSolutionContainer.style.display = 'block';
+            }
+            function calculateFormula() {
+                const x = parseFloat(document.getElementById('var-x').value); const y = parseFloat(document.getElementById('var-y').value); if(isNaN(x) || isNaN(y)){ return; }
+                const formula = allElements.formulaSelect.value; let html = '', result, calcData;
+                if(formula === 'x_plus_y_sq'){ html = `<h3>Calculating (${x} + ${y})²</h3>`; html += createStep("1. Use the formula (x + y)² = x² + 2xy + y².", `(${x})² + 2(${x})(${y}) + (${y})²`); html += createStep("2. Calculate each term.", `${x*x} + ${2*x*y} + ${y*y}`); result = x*x + 2*x*y + y*y; html += createStep("3. Sum the terms.", `${result}`); }
+                else if(formula === 'x_minus_y_sq'){ html = `<h3>Calculating (${x} - ${y})²</h3>`; html += createStep("1. Use the formula (x - y)² = x² - 2xy + y².", `(${x})² - 2(${x})(${y}) + (${y})²`); html += createStep("2. Calculate each term.", `${x*x} - ${2*x*y} + ${y*y}`); result = x*x - 2*x*y + y*y; html += createStep("3. Sum the terms.", `${result}`); }
+                else if(formula === 'x_plus_y_cubed'){ html = `<h3>Calculating (${x} + ${y})³</h3>`; html += createStep("1. Use formula (x+y)³ = x³ + 3x²y + 3xy² + y³.", `(${x})³ + 3(${x})²(${y}) + 3(${x})(${y})² + (${y})³`); const t1 = x*x*x; const t2 = 3*x*x*y; const t3 = 3*x*y*y; const t4 = y*y*y; html += createStep("2. Calculate each term.", `${t1} + ${t2} + ${t3} + ${t4}`); result = t1 + t2 + t3 + t4; html += createStep("3. Sum the terms.", `${result}`); }
+                else if(formula === 'x_minus_y_cubed'){ html = `<h3>Calculating (${x} - ${y})³</h3>`; html += createStep("1. Use formula (x-y)³ = x³ - 3x²y + 3xy² - y³.", `(${x})³ - 3(${x})²(${y}) + 3(${x})(${y})² - (${y})³`); const t1 = x*x*x; const t2 = 3*x*x*y; const t3 = 3*x*y*y; const t4 = y*y*y; html += createStep("2. Calculate each term.", `${t1} - ${t2} + ${t3} - ${t4}`); result = t1 - t2 + t3 - t4; html += createStep("3. Sum the terms.", `${result}`); }
+                else if(formula === 'sum_of_sq'){ html = `<h3>Calculating ${x}² + ${y}²</h3>`; html += createStep("1. Calculate the square of each term.", `(${x*x}) + (${y*y})`); result = x*x + y*y; html += createStep("2. Sum the results.", `${result}`); html += createStep("Note", "The Sum of Squares (x² + y²) does not factor over real numbers."); }
+                else if(formula === 'diff_of_sq'){ html = `<h3>Calculating ${x}² - ${y}²</h3>`; html += createStep("1. Use the formula x² - y² = (x + y)(x - y).", `(${x} + ${y})(${x} - ${y})`); html += createStep("2. Calculate each parenthesis.", `(${x+y})(${x-y})`); result = (x+y)*(x-y); html += createStep("3. Multiply the results.", `${result}`); }
+                else if(formula === 'sum_of_cubes'){ html = `<h3>Calculating ${x}³ + ${y}³</h3>`; html += createStep("1. Use formula x³+y³ = (x+y)(x²-xy+y²).", `(${x}+${y})((${x})²-(${x})(${y})+(${y})²)`); const p1 = x + y; const p2 = x*x - x*y + y*y; html += createStep("2. Calculate each part.", `(${p1})(${p2})`); result = p1 * p2; html += createStep("3. Multiply the results.", `${result}`); }
+                else if(formula === 'diff_of_cubes'){ html = `<h3>Calculating ${x}³ - ${y}³</h3>`; html += createStep("1. Use formula x³-y³ = (x-y)(x²+xy+y²).", `(${x}-${y})((${x})²+(${x})(${y})+(${y})²)`); const p1 = x - y; const p2 = x*x + x*y + y*y; html += createStep("2. Calculate each part.", `(${p1})(${p2})`); result = p1 * p2; html += createStep("3. Multiply the results.", `${result}`); }
+                html += `<div class="final-answer">Result: ${result}</div>`; allElements.solutionContainer.innerHTML = html;
+                calcData = { formulaName: allElements.formulaSelect.options[allElements.formulaSelect.selectedIndex].text, inputs: {x,y}, steps: [`Result: ${result}`] };
+                addSaveButton(allElements.solutionContainer, calcData); allElements.solutionContainer.style.display = 'block';
+            }
+            function updateInputFields() {
+                allElements.inputFieldsContainer.innerHTML = `<div class="form-group"><label for="var-x">Enter x:</label><input type="number" id="var-x" placeholder="e.g., 5"></div><div class="form-group"><label for="var-y">Enter y:</label><input type="number" id="var-y" placeholder="e.g., 3"></div>`;
+            }
+            function exportHistoryAsPDF() {
+                if (historyLog.length === 0) { alert("History is empty."); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF();
+                doc.text("Algebra Calculation History", 14, 16);
+                doc.autoTable({
+                    head: [["Date", "Calculation", "Input", "Result"]],
+                    body: historyLog.map(item => [new Date(item.timestamp?.seconds * 1000).toLocaleString(), item.formulaName, JSON.stringify(item.inputs), item.steps[0]]),
+                    startY: 20,
+                }); doc.save('algebra_history.pdf');
+            }
+
+            // --- START THE APP ---
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
